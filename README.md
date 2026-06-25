@@ -1,4 +1,12 @@
+<p align="center">
+  <img src="assets/olcx-mark.svg" alt="olcx" width="96" height="96">
+</p>
+
 # overleaf-codex
+
+[![CI](https://github.com/umiskky/overleaf-codex/actions/workflows/ci.yml/badge.svg)](https://github.com/umiskky/overleaf-codex/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-scaffold-orange.svg)](#current-status)
 
 `overleaf-codex` is a planned CLI tool for writing LaTeX papers locally while using
 Overleaf as the remote compiler.
@@ -118,6 +126,25 @@ npm run build
 npm run typecheck
 npm test
 ```
+
+## Contributing
+
+This project is intended to be open source and community-maintained.
+
+Good first contribution areas:
+
+- improve docs for real Overleaf workflows;
+- test auth and sync behavior across Linux, macOS, and Windows;
+- port focused pieces of `olcli` into the `olcx` backend with MIT attribution;
+- design conflict-safe sync flows;
+- improve VS Code task/settings generation.
+
+Before contributing, read:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [SECURITY.md](SECURITY.md)
+- [ROADMAP.md](ROADMAP.md)
 
 ## License
 

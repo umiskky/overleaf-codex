@@ -3,10 +3,19 @@
   "version": "0.1.0",
   "description": "Local Git, VS Code, and Codex workflow bridge for Overleaf-backed LaTeX compilation.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/umiskky/overleaf-codex.git"
+  },
+  "bugs": {
+    "url": "https://github.com/umiskky/overleaf-codex/issues"
+  },
+  "homepage": "https://github.com/umiskky/overleaf-codex#readme",
   "bin": {
     "olcx": "./dist/cli.js"
   },
   "files": [
+    "assets",
     "dist",
     "README.md",
     "LICENSE",
@@ -30,6 +39,7 @@
   ],
   "author": "",
   "license": "MIT",
+  "sideEffects": false,
   "engines": {
     "node": ">=20"
   },

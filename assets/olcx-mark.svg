@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">olcx mark</title>
+  <desc id="desc">A document, code brackets, and a leaf-shaped Overleaf reference mark.</desc>
+  <defs>
+    <linearGradient id="paper" x1="28" y1="18" x2="98" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#dbeafe"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="74" y1="28" x2="105" y2="79" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34d399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="24" fill="#0f172a"/>
+  <path d="M35 18h40l20 20v72H35z" fill="url(#paper)"/>
+  <path d="M75 18v20h20z" fill="#bfdbfe"/>
+  <path d="M50 57 37 69l13 12" fill="none" stroke="#2563eb" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M78 57 91 69 78 81" fill="none" stroke="#2563eb" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M68 53 58 86" fill="none" stroke="#0f172a" stroke-width="7" stroke-linecap="round"/>
+  <path d="M85 32c18 2 27 17 18 31-8 12-27 13-38 2 3-18 10-29 20-33z" fill="url(#leaf)"/>
+  <path d="M68 65c11-4 21-12 29-25" fill="none" stroke="#ecfdf5" stroke-width="5" stroke-linecap="round"/>
+</svg>
