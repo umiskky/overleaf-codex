@@ -1,0 +1,45 @@
+{
+  "name": "overleaf-codex",
+  "version": "0.1.0",
+  "description": "Local Git, VS Code, and Codex workflow bridge for Overleaf-backed LaTeX compilation.",
+  "type": "module",
+  "bin": {
+    "olcx": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "overleaf",
+    "latex",
+    "codex",
+    "vscode",
+    "cli",
+    "pdf",
+    "sync"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.9"
+  }
+}

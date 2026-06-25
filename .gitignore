@@ -1,0 +1,30 @@
+node_modules/
+dist/
+coverage/
+.vitest/
+.DS_Store
+npm-debug.log*
+
+# Local paper-project state created by olcx.
+.olcx/*.local.json
+.olcx/*.secret.json
+.olcx/state/
+
+# Downloaded or generated artifacts.
+build/overleaf/
+*.synctex.gz
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.toc
+
+# Local environment files.
+.env
+.env.*
+!.env.example
