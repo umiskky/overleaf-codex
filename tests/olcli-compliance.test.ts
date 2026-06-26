@@ -196,7 +196,7 @@ describe("olcli backend vendoring", () => {
         relativePath: relative(repoPath("."), filePath),
         source: readFileSync(filePath, "utf8"),
       }))
-      .filter(({ relativePath, source }) => importPattern.test(source) && !allowed.has(relativePath));
+      .filter(({ relativePath, source }) => importPattern.test(source) && !allowed.has(relativePath.replace(/\\/g, "/")));
 
     expect(offenders).toEqual([]);
   });

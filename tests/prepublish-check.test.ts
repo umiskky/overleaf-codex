@@ -191,6 +191,10 @@ function injectedRelativePath(filePath: string): string {
   return normalizeInjectedPath(filePath).replace(/^\/repo\//, "");
 }
 
+function normalizeRecordedCommand(command: string): string {
+  return command.replace(/^npm\.cmd\b/, "npm");
+}
+
 describe("prepublish package contents gate", () => {
   it("accepts the intended package surface", () => {
     expect(() =>
@@ -676,7 +680,7 @@ describe("prepublish command orchestration", () => {
     });
 
     expect(result).toEqual({ exitCode: 0 });
-    expect(commands).toEqual([
+    expect(commands.map(normalizeRecordedCommand)).toEqual([
       "npm run build",
       "npm run typecheck",
       "npm test",
