@@ -6,6 +6,9 @@ coverage/
 npm-debug.log*
 
 # Local paper-project state created by olcx.
+.olcx/auth.local.json
+*.local.json
+*.secret.json
 .olcx/*.local.json
 .olcx/*.secret.json
 .olcx/state/
@@ -28,3 +31,9 @@ build/overleaf/
 .env
 .env.*
 !.env.example
+!.env.e2e.example
+
+todo.md
+done.md
+goal.md
+tmp/

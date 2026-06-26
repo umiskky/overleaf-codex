@@ -8,6 +8,8 @@
 - [ ] `npm run typecheck`
 - [ ] `npm test`
 - [ ] `npm audit --audit-level=high`
+- [ ] `OLCX_E2E_IGNORE_LOCAL_ENV=1 OLCX_E2E_ENABLE_REAL=0 npm run test:e2e:real`
+- [ ] `npm run prepublish:check`
 
 ## Safety Checklist
 

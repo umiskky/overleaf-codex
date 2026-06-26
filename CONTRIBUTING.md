@@ -2,13 +2,13 @@
 
 Thanks for helping improve `overleaf-codex`.
 
-The project is early. Contributions should keep the tool small, testable, and
-safe for real paper repositories.
+Contributions should keep the tool small, CLI-first, testable, and safe for real
+paper repositories.
 
 ## Development setup
 
 ```bash
-npm install
+npm ci
 npm run build
 npm run typecheck
 npm test
@@ -46,8 +46,16 @@ Before opening a pull request, run:
 npm run build
 npm run typecheck
 npm test
-npm audit
+npm audit --audit-level=high
+OLCX_E2E_IGNORE_LOCAL_ENV=1 OLCX_E2E_ENABLE_REAL=0 npm run test:e2e:real
+npm run prepublish:check
 ```
+
+This includes build, typecheck, tests, high-severity npm audit, package contents,
+dependency license, third-party notice, and secret checks.
+
+The forced E2E skip command is safe for normal contributor machines because
+`OLCX_E2E_IGNORE_LOCAL_ENV=1` prevents reading `.env.e2e.local`.
 
 ## Commit style
 

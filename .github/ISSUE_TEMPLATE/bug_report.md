@@ -18,6 +18,15 @@ Describe the problem.
 - olcx version or commit:
 - Headless server: yes/no
 
+## Diagnostics
+
+Please run local diagnostics and paste sanitized output:
+
+```bash
+olcx status
+olcx doctor
+```
+
 ## Steps to reproduce
 
 ```bash

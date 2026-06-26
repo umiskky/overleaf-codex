@@ -1,0 +1,91 @@
+name: Publish to npm
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish overleaf-codex
+    if: github.repository == 'umiskky/overleaf-codex'
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    env:
+      GITHUB_RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.14.0"
+          registry-url: https://registry.npmjs.org
+
+      - name: Install trusted publishing capable npm
+        run: npm install -g npm@^11.5.1
+
+      - name: Install
+        run: npm ci
+
+      - name: Check release tag and stable gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          RELEASE_TAG="${GITHUB_REF_NAME}"
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag must use vX.Y.Z or vX.Y.Z-prerelease.N" >&2
+            exit 1
+          fi
+          RELEASE_VERSION="${RELEASE_TAG#v}"
+          if [ "$RELEASE_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "Release tag $RELEASE_TAG does not match package.json version $PACKAGE_VERSION" >&2
+            exit 1
+          fi
+
+          if [[ "$PACKAGE_VERSION" == *-* ]]; then
+            if [ "$GITHUB_RELEASE_PRERELEASE" != "true" ]; then
+              echo "Prerelease package versions must be published from a GitHub prerelease." >&2
+              exit 1
+            fi
+            echo "NPM_DIST_TAG=next" >> "$GITHUB_ENV"
+          else
+            if [ "$GITHUB_RELEASE_PRERELEASE" != "false" ]; then
+              echo "Stable package versions must be published from a non-prerelease GitHub release." >&2
+              exit 1
+            fi
+            if grep -Ei "not recorded|placeholder|not evidence" docs/release-notes-v1.md; then
+              echo "Concrete sanitized real E2E artifact reference is required for stable npm publish." >&2
+              exit 1
+            fi
+            if grep -F "Stable npm publish is blocked" docs/release-notes-v1.md; then
+              echo "Stable npm publish is blocked until sanitized real Overleaf E2E is recorded." >&2
+              exit 1
+            fi
+            if grep -F "Stable release decision: Not approved for stable release" docs/release-notes-v1.md; then
+              echo "Stable npm publish is blocked until stable release approval is recorded." >&2
+              exit 1
+            fi
+            grep -F "Stable release decision: Approved for stable release" docs/release-notes-v1.md
+            grep -E "^Sanitized real E2E artifact: gh-release://[^[:space:]]+$" docs/release-notes-v1.md
+            echo "NPM_DIST_TAG=latest" >> "$GITHUB_ENV"
+          fi
+
+      - name: Real E2E skip smoke
+        run: npm run test:e2e:real
+        env:
+          OLCX_E2E_IGNORE_LOCAL_ENV: "1"
+          OLCX_E2E_ENABLE_REAL: "0"
+
+      - name: Prepublish check
+        run: npm run prepublish:check
+
+      - name: Publish
+        run: npm publish --tag "$NPM_DIST_TAG"

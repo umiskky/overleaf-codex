@@ -1,0 +1,26 @@
+# Project-local olcx auth and state.
+.olcx/auth.local.json
+.olcx/*.local.json
+.olcx/*.secret.json
+.olcx/state/
+
+# Local-only JSON and environment files.
+*.local.json
+*.secret.json
+.env.*
+
+# Downloaded Overleaf PDF output.
+build/overleaf/
+
+# Common LaTeX build artifacts.
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc

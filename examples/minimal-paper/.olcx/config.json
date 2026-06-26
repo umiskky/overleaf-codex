@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "projectId": "<overleaf-project-id>",
+  "projectUrl": "https://www.overleaf.com/project/<overleaf-project-id>",
+  "overleaf": {
+    "baseUrl": "https://www.overleaf.com"
+  },
+  "rootDocument": "main.tex",
+  "pdfPath": "build/overleaf/main.pdf",
+  "sync": {
+    "mode": "bidirectional",
+    "conflictPolicy": "pause",
+    "ignore": []
+  },
+  "compile": {
+    "timeoutMs": 120000,
+    "fastFallback": {
+      "enabled": true,
+      "attempts": 1,
+      "timeoutMs": 30000
+    }
+  }
+}

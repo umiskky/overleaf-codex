@@ -10,7 +10,18 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Node ${{ matrix.node-version }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        node-version:
+          - 20
+          - 22
 
     steps:
       - name: Checkout
@@ -19,7 +30,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: npm
 
       - name: Install
@@ -34,5 +45,28 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Audit
-        run: npm audit --audit-level=high
+  release-gate:
+    name: Release gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Real E2E skip smoke
+        run: npm run test:e2e:real
+        env:
+          OLCX_E2E_IGNORE_LOCAL_ENV: "1"
+          OLCX_E2E_ENABLE_REAL: "0"
+
+      - name: Prepublish check
+        run: npm run prepublish:check

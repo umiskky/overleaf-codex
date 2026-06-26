@@ -1,37 +1,36 @@
 # Roadmap
 
-This roadmap is intentionally narrow. The first useful release should be a
-reliable CLI, not a large platform.
+This roadmap is intentionally narrow. v1 is a CLI-first release candidate, not a
+large platform. Stable release remains blocked until a sanitized disposable real
+Overleaf E2E pass is recorded.
 
-## Phase 0: Project foundation
+## v1 RC
 
-- Initialize TypeScript CLI scaffold.
-- Publish open-source docs, contribution rules, and CI.
-- Document security and licensing constraints.
+The v1 RC includes:
 
-## Phase 1: Backend integration
+- TypeScript CLI packaging with build, typecheck, test, audit, and prepublish
+  gates.
+- Open-source docs, contribution rules, security policy, CI, and release notes.
+- MIT-attributed backend-private code copied or adapted from `@aloth/olcli@0.5.0`.
+- `olcx auth`, `olcx init --project <url-or-id> --vscode`, `olcx status`, and
+  `olcx doctor`.
+- Project-local auth in `.olcx/auth.local.json` and shareable binding config in
+  `.olcx/config.json`.
+- Safe bidirectional sync that stops on `SYNC_CONFLICT` instead of silently
+  overwriting local or remote changes.
+- Remote Overleaf-backed compile that downloads to `build/overleaf/main.pdf`
+  without requiring local LaTeX.
+- `olcx watch` with debounce and queued sync/compile behavior.
 
-- Import the needed MIT-licensed `olcli` backend code with attribution.
-- Keep `olcx` independently packaged so users do not install `olcli`.
-- Add tests around auth, project binding, compile, and PDF download behavior.
+## Stable release gate
 
-## Phase 2: Paper project workflow
+Before approving stable v1, record a sanitized disposable real Overleaf E2E pass
+and keep raw cookies, session values, account labels, private project IDs, and
+private paper content out of the repository.
 
-- Implement `olcx auth`.
-- Implement `olcx init --project <url-or-id> --vscode`.
-- Store project-local auth in `.olcx/auth.local.json`.
-- Store shareable binding config in `.olcx/config.json`.
+## Post-v1
 
-## Phase 3: Safe sync and compile loop
-
-- Implement bidirectional sync with no silent overwrites.
-- Pause on conflicts and print actionable resolution steps.
-- Implement `olcx compile` and download to `build/overleaf/main.pdf`.
-- Implement `olcx watch` with debounce and queue state.
-
-## Phase 4: Community hardening
-
-- Test Linux, macOS, Windows, and headless usage.
-- Improve docs with real examples and troubleshooting.
-- Prepare npm package publishing.
-- Consider optional VS Code extension only after the CLI is stable.
+- Improve structured output for automation.
+- Expand compatibility coverage as Overleaf behavior changes.
+- Improve docs with additional sanitized examples and troubleshooting.
+- Consider optional VS Code extension only after the CLI workflow is stable.

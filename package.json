@@ -20,12 +20,19 @@
     "README.md",
     "LICENSE",
     "NOTICE.md",
-    "docs"
+    "docs",
+    "examples",
+    "src/backend/olcli/LICENSE",
+    "src/backend/olcli/README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
+    "e2e:real": "tsx scripts/run-real-overleaf-e2e.ts",
+    "prepublish:check": "tsx scripts/prepublish-check.ts",
+    "prepublishOnly": "npm run prepublish:check",
     "test": "vitest run",
+    "test:e2e:real": "vitest run --reporter=verbose tests/e2e/real-overleaf.e2e.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "keywords": [
@@ -44,9 +51,13 @@
     "node": ">=20"
   },
   "dependencies": {
+    "adm-zip": "0.5.16",
+    "cheerio": "1.0.0",
+    "chokidar": "^4.0.3",
     "commander": "^12.1.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "0.5.7",
     "@types/node": "^22.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0",
