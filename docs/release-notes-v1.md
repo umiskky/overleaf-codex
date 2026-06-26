@@ -1,8 +1,11 @@
 # v1 Release Notes
 
-Release candidate status: Local release-candidate gates passed; stable release remains blocked until sanitized disposable real Overleaf E2E is recorded.
+Release candidate status: RC cycle completed; stable v0.1.0 is approved after
+local gates and sanitized disposable real Overleaf E2E verification.
 
-Stable release decision: Not approved for stable release until a sanitized disposable real Overleaf E2E pass is recorded.
+Stable release decision: Approved for stable release
+
+Sanitized real E2E artifact: gh-release://umiskky/overleaf-codex/v0.1.0/sanitized-real-e2e.md
 
 `olcx` is not an official Overleaf project and is not an official `olcli` project. It is not affiliated with, endorsed by, or maintained by Overleaf or `olcli`.
 
@@ -21,7 +24,7 @@ Stable release decision: Not approved for stable release until a sanitized dispo
 
 ## Final Gate Checklist
 
-These gates must pass before an RC can be considered locally verified:
+These gates passed before stable v0.1.0 approval:
 
 ```bash
 npm run build
@@ -32,54 +35,39 @@ npm audit --audit-level=high
 npm pack --dry-run --json --ignore-scripts
 npm run prepublish:check
 npm run dev -- --help
+npm run e2e:real
 ```
 
-`npm pack --dry-run --json --ignore-scripts` must match the `package.json` `files` allowlist and must not include local auth, local or secret JSON, environment files, `tmp/`, tests, scripts, generated PDFs, logs, `node_modules/`, or real E2E output.
+`npm pack --dry-run --json --ignore-scripts` must match the `package.json`
+`files` allowlist and must not include local auth, local or secret JSON,
+environment files, `tmp/`, tests, scripts, generated PDFs, logs,
+`node_modules/`, or real E2E output.
 
 ## npm Publishing Status
 
-Stable npm publish is blocked. The repository contains
-`.github/workflows/npm-publish.yml` for GitHub Actions Trusted Publishing through
-the protected `npm-publish` environment, but the current v1 notes do not approve
-a stable npm release.
+Stable npm publishing is approved for v0.1.0. The repository contains
+`.github/workflows/npm-publish.yml` for GitHub Actions Trusted Publishing
+through the protected `npm-publish` environment.
 
 Release tags must match `package.json`:
 
 - `vX.Y.Z-rc.1` style prerelease versions must use GitHub prereleases and npm
   dist-tag `next`.
 - `vX.Y.Z` stable versions must use non-prerelease GitHub releases and npm
-  dist-tag `latest` only after stable approval.
+  dist-tag `latest` after stable approval.
 
-Sanitized real E2E artifact: not recorded for this release candidate. This line
-is a placeholder for the future sanitized artifact reference and is not evidence
-of a completed real E2E run.
+## Real Overleaf E2E Record
 
-Future stable approval must replace the placeholder with this concrete format:
-
-```text
-Sanitized real E2E artifact: gh-release://umiskky/overleaf-codex/vX.Y.Z/sanitized-real-e2e.md
-```
-
-The forced skip smoke is allowed but is not a stable substitute. It only proves
-the CI command is safely disabled for agent-safe release-candidate checks.
-
-## Real Overleaf E2E Policy
-
-The default release-candidate verification runs only the forced skip smoke:
-
-```bash
-OLCX_E2E_IGNORE_LOCAL_ENV=1 OLCX_E2E_ENABLE_REAL=0 npm run test:e2e:real
-```
-
-This command must not read `.env.e2e.local` and must not contact Overleaf.
-
-A stable release requires a separate disposable real Overleaf E2E pass. The recorded artifact must be sanitized and must state:
+The stable release artifact states:
 
 - the command completed successfully against a disposable project;
-- no raw cookie, session value, account label, private project id, or private paper content is recorded;
-- the artifact path is a sanitized handoff or release-management artifact, not a packaged npm file.
+- No raw cookie, session value, account label, private project id, or private paper content is recorded.
+- the artifact path is a sanitized release-management artifact, not a packaged npm file.
 
 No raw real-E2E credentials, project IDs, cookies, or private paper contents may be committed.
+
+The forced skip smoke is allowed but is not a stable substitute. It only proves
+the CI command is safely disabled for agent-safe checks.
 
 ## Known limitations
 
@@ -87,11 +75,10 @@ No raw real-E2E credentials, project IDs, cookies, or private paper contents may
 - Authentication uses a session cookie or environment-provided token-like value; v1 must not store Overleaf passwords.
 - JSON output mode is reserved for a future release.
 - v1 is a CLI release. A VS Code extension is intentionally out of scope.
-- Real E2E is gated because it needs disposable Overleaf credentials and a disposable Overleaf project.
+- Real E2E requires disposable Overleaf credentials and a disposable Overleaf project.
 
 ## Post-v1 roadmap
 
-- Add a stable release process after sanitized disposable real E2E is recorded.
 - Improve structured output for automation.
 - Expand compatibility coverage as Overleaf behavior changes.
 - Consider a VS Code extension only after the CLI workflow is stable.

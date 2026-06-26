@@ -221,6 +221,7 @@ describe("v1 user documentation readiness", () => {
         "v1 Release Notes",
         "Release candidate status",
         "Stable release decision",
+        "Stable release decision: Approved for stable release",
         "not an official Overleaf project",
         "not an official `olcli` project",
         "Overleaf private interfaces",
@@ -237,9 +238,9 @@ describe("v1 user documentation readiness", () => {
         "vX.Y.Z-rc.1",
         "latest",
         "next",
-        "Stable npm publish is blocked",
+        "Stable npm publishing is approved",
         "Sanitized real E2E artifact:",
-        "gh-release://umiskky/overleaf-codex/vX.Y.Z/sanitized-real-e2e.md",
+        "gh-release://umiskky/overleaf-codex/v0.1.0/sanitized-real-e2e.md",
         "forced skip smoke is allowed but is not a stable substitute",
         "build/overleaf/main.pdf",
         "SYNC_CONFLICT",
@@ -264,20 +265,19 @@ describe("v1 user documentation readiness", () => {
     }
   });
 
-  it("release notes make the stable-release decision explicit without claiming unverified real E2E", () => {
+  it("release notes make the stable-release decision explicit and reference sanitized real E2E", () => {
     const notes = readRequired("docs/release-notes-v1.md");
-    const blockedDecision = notes.includes(
-      "Stable release decision: Not approved for stable release until a sanitized disposable real Overleaf E2E pass is recorded."
-    );
     const approvedDecision =
       notes.includes("Stable release decision: Approved for stable release") &&
-      notes.includes("Sanitized real E2E artifact:") &&
+      notes.includes("Sanitized real E2E artifact: gh-release://umiskky/overleaf-codex/v0.1.0/sanitized-real-e2e.md") &&
       notes.includes(
         "No raw cookie, session value, account label, private project id, or private paper content is recorded."
       );
 
-    expect(blockedDecision || approvedDecision).toBe(true);
-    expect(notes).toContain("Stable npm publish is blocked");
+    expect(approvedDecision).toBe(true);
+    expect(notes).not.toContain("Stable npm publish is blocked");
+    expect(notes).not.toContain("Stable release decision: Not approved for stable release");
+    expect(notes).not.toMatch(/not recorded|placeholder|not evidence/i);
     expect(notes).toContain("Sanitized real E2E artifact:");
     expect(notes).toContain(".github/workflows/npm-publish.yml");
     expect(notes).toContain("vX.Y.Z");
@@ -285,17 +285,17 @@ describe("v1 user documentation readiness", () => {
     expect(notes).toContain("latest");
     expect(notes).toContain("next");
     expect(notes).toContain("forced skip smoke is allowed but is not a stable substitute");
-    expect(notes).not.toMatch(/real e2e passed/i);
   });
 
-  it("release-facing status docs do not present the blocked RC as a stable v1 release", () => {
+  it("release-facing status docs present stable v1 release state", () => {
     const readme = readRequired("README.md");
     const roadmap = readRequired("ROADMAP.md");
 
-    expect(readme).toContain("status-v1--rc--local--gates");
-    expect(readme).not.toContain("status-v1--ready");
-    expect(roadmap).toContain("v1 RC");
-    expect(roadmap).toContain("Stable release remains blocked");
+    expect(readme).toContain("status-v1--stable--released");
+    expect(readme).not.toContain("status-v1--rc--local--gates");
+    expect(roadmap).toContain("v1 Stable");
+    expect(roadmap).toContain("Stable v1 is released");
+    expect(roadmap).not.toContain("Stable release remains blocked");
     expect(roadmap).not.toContain("Implement `olcx auth`.");
     expect(roadmap).not.toContain("Prepare npm package publishing.");
   });

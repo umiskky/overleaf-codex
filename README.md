@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/umiskky/overleaf-codex/actions/workflows/ci.yml/badge.svg)](https://github.com/umiskky/overleaf-codex/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-v1--rc--local--gates-blue.svg)](#current-status)
+[![Status](https://img.shields.io/badge/status-v1--stable--released-green.svg)](#current-status)
 
 `overleaf-codex` provides the `olcx` CLI for writing LaTeX papers locally while
 using a bound Overleaf project for remote compilation.
@@ -84,9 +84,9 @@ Overleaf passwords.
 
 ## Current Status
 
-v1 is a release candidate. Local gates are tracked in
-[docs/release-notes-v1.md](docs/release-notes-v1.md); stable release remains
-blocked until a sanitized disposable real Overleaf E2E pass is recorded.
+v1 is released as `0.1.0`. Release gates, stable approval, and the sanitized
+disposable real Overleaf E2E artifact are tracked in
+[docs/release-notes-v1.md](docs/release-notes-v1.md).
 
 The implemented command surface is:
 
@@ -150,7 +150,7 @@ command to run next.
 - [docs/troubleshooting.md](docs/troubleshooting.md) lists diagnosis commands.
 - [docs/npm-packaging.md](docs/npm-packaging.md) explains package contents.
 - [docs/release-gates.md](docs/release-gates.md) explains release checks.
-- [docs/release-notes-v1.md](docs/release-notes-v1.md) records the v1 RC status, release notes, known limitations, and stable-release approval rule.
+- [docs/release-notes-v1.md](docs/release-notes-v1.md) records the v1 release status, release notes, known limitations, and stable-release approval.
 
 See the [minimal example paper](examples/minimal-paper/README.md) for a
 sanitized project layout with `.olcx/config.json`, an auth-file shape example,

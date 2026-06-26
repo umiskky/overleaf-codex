@@ -1,12 +1,12 @@
 # Roadmap
 
-This roadmap is intentionally narrow. v1 is a CLI-first release candidate, not a
-large platform. Stable release remains blocked until a sanitized disposable real
-Overleaf E2E pass is recorded.
+This roadmap is intentionally narrow. v1 is a CLI-first stable release, not a
+large platform. Stable v1 is released after a sanitized disposable real Overleaf
+E2E artifact was recorded.
 
-## v1 RC
+## v1 Stable
 
-The v1 RC includes:
+The v1 stable release includes:
 
 - TypeScript CLI packaging with build, typecheck, test, audit, and prepublish
   gates.
@@ -24,9 +24,9 @@ The v1 RC includes:
 
 ## Stable release gate
 
-Before approving stable v1, record a sanitized disposable real Overleaf E2E pass
-and keep raw cookies, session values, account labels, private project IDs, and
-private paper content out of the repository.
+Stable v1 approval requires a sanitized disposable real Overleaf E2E artifact.
+Raw cookies, session values, account labels, private project IDs, and private
+paper content must stay out of the repository.
 
 ## Post-v1
 
