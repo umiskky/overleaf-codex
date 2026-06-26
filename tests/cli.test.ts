@@ -2,8 +2,9 @@ import { readFileSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import { buildCli, run } from "../src/cli";
+import { buildCli, isDirectCliInvocation, run } from "../src/cli";
 import { readProjectAuth, writeProjectAuth } from "../src/auth/projectAuth";
 import type { BackendCompileInput, CompileResult, OverleafBackend } from "../src/backend";
 import { readProjectConfig, writeProjectConfig } from "../src/config/projectConfig";
@@ -190,6 +191,15 @@ function readmeCommandSurface(): string[] {
 }
 
 describe("olcx cli", () => {
+  it("recognizes npm bin symlink invocation as the direct CLI entrypoint", () => {
+    const target = join(tmpdir(), "olcx-entry", "dist", "cli.js");
+    const binLink = join(tmpdir(), "olcx-entry", "node_modules", ".bin", "olcx");
+    const realpath = (value: string) => (value === binLink ? target : value);
+
+    expect(isDirectCliInvocation(pathToFileURL(target).href, binLink, realpath)).toBe(true);
+    expect(isDirectCliInvocation(pathToFileURL(target).href, join(tmpdir(), "other.js"), realpath)).toBe(false);
+  });
+
   it("uses a Node-resolvable local ESM import for the built CLI", () => {
     const source = readFileSync(new URL("../src/cli.ts", import.meta.url), "utf8");
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { pathToFileURL } from "node:url";
+import { realpathSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { Command, CommanderError, InvalidArgumentError, Option } from "commander";
 import {
   EXIT_CODES,
@@ -559,6 +560,16 @@ function readConflictDetails(details: unknown): { path: string; reason: string }
     }));
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+type Realpath = (path: string) => string;
+
+export function isDirectCliInvocation(entryUrl: string, argvPath: string, realpath: Realpath = realpathSync): boolean {
+  try {
+    return realpath(fileURLToPath(entryUrl)) === realpath(argvPath);
+  } catch {
+    return entryUrl === pathToFileURL(argvPath).href;
+  }
+}
+
+if (process.argv[1] && isDirectCliInvocation(import.meta.url, process.argv[1])) {
   void run();
 }
