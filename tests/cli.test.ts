@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import { buildCli, isDirectCliInvocation, run } from "../src/cli";
+import { VERSION, buildCli, isDirectCliInvocation, run } from "../src/cli";
 import { readProjectAuth, writeProjectAuth } from "../src/auth/projectAuth";
 import type { BackendCompileInput, CompileResult, OverleafBackend } from "../src/backend";
 import { readProjectConfig, writeProjectConfig } from "../src/config/projectConfig";
@@ -198,6 +198,14 @@ describe("olcx cli", () => {
 
     expect(isDirectCliInvocation(pathToFileURL(target).href, binLink, realpath)).toBe(true);
     expect(isDirectCliInvocation(pathToFileURL(target).href, join(tmpdir(), "other.js"), realpath)).toBe(false);
+  });
+
+  it("reports the package version from package.json", () => {
+    const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+      version?: string;
+    };
+
+    expect(VERSION).toBe(packageJson.version);
   });
 
   it("uses a Node-resolvable local ESM import for the built CLI", () => {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { realpathSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Command, CommanderError, InvalidArgumentError, Option } from "commander";
 import {
@@ -32,7 +32,14 @@ import { MAX_FAST_FALLBACK_ATTEMPTS } from "./config/types.js";
 import type { FetchLike } from "./endpoint/overleafEndpoint.js";
 import type { WatchAdapter, WatchSignalRuntime } from "./watch/types.js";
 
-export const VERSION = "0.1.0";
+function readPackageVersion(): string {
+  const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+    version?: unknown;
+  };
+  return typeof packageJson.version === "string" ? packageJson.version : "0.0.0-unknown";
+}
+
+export const VERSION = readPackageVersion();
 
 export interface CliIo {
   writeOut: (value: string) => void;
