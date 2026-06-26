@@ -44,7 +44,7 @@ describe("npm publish workflow", () => {
 
     expect(packageJson.name).toBe("overleaf-codex");
     expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
-    expect(packageJson.bin?.olcx).toBe("./dist/cli.js");
+    expect(packageJson.bin?.olcx).toBe("dist/cli.js");
     expect(packageJson.license).toBe("MIT");
     expect(packageJson.repository).toEqual({
       type: "git",

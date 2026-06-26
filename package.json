@@ -1,6 +1,6 @@
 {
   "name": "overleaf-codex",
-  "version": "0.1.0",
+  "version": "0.1.0-rc.2",
   "description": "Local Git, VS Code, and Codex workflow bridge for Overleaf-backed LaTeX compilation.",
   "type": "module",
   "repository": {
@@ -12,7 +12,7 @@
   },
   "homepage": "https://github.com/umiskky/overleaf-codex#readme",
   "bin": {
-    "olcx": "./dist/cli.js"
+    "olcx": "dist/cli.js"
   },
   "files": [
     "assets",
