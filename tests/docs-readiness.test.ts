@@ -26,7 +26,7 @@ function readRequired(relativePath: string): string {
   if (!existsSync(absolutePath)) {
     throw new Error(`${relativePath} is required for v1 docs readiness`);
   }
-  return readFileSync(absolutePath, "utf8");
+  return readFileSync(absolutePath, "utf8").replace(/\r\n/g, "\n");
 }
 
 function expectContainsAll(contents: string, values: string[]): void {

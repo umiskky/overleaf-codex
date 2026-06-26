@@ -33,9 +33,15 @@ olcx compile --disable-fast-fallback
 olcx compile --fast-fallback-timeout 60000
 ```
 
-When fallback produces the PDF, command output includes `Status:
-fallback-success` and `Fallback: fast/draft`. Treat that PDF as a recovery
-artifact, not a full normal compile result.
+When fallback produces the PDF, command output includes:
+
+```text
+Status:
+fallback-success
+Fallback: fast/draft
+```
+
+Treat that PDF as a recovery artifact, not a full normal compile result.
 
 If both modes fail, inspect the compile output, fix the LaTeX source locally or
 on Overleaf, run `olcx sync --dry-run`, and compile again.

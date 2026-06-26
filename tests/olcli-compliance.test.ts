@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { relative } from "node:path";
+import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const OLCX_VERSION = "0.1.0";
@@ -22,7 +23,7 @@ function repoUrl(relativePath: string): URL {
 }
 
 function repoPath(relativePath: string): string {
-  return repoUrl(relativePath).pathname;
+  return fileURLToPath(repoUrl(relativePath));
 }
 
 function readRepoFile(relativePath: string): string {
@@ -49,7 +50,7 @@ function allPackageDependencies(pkg: PackageJson): Record<string, string> {
 function sourceFilePaths(dir: string): string[] {
   return readdirSync(dir)
     .flatMap((entry) => {
-      const fullPath = `${dir}/${entry}`;
+      const fullPath = join(dir, entry);
       const stat = statSync(fullPath);
       return stat.isDirectory() ? sourceFilePaths(fullPath) : [fullPath];
     })

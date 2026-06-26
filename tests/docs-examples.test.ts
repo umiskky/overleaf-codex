@@ -10,7 +10,7 @@ import { scanReleaseText } from "../scripts/prepublish-check";
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 function readRepo(relativePath: string): string {
-  return readFileSync(join(repoRoot, relativePath), "utf8");
+  return readFileSync(join(repoRoot, relativePath), "utf8").replace(/\r\n/g, "\n");
 }
 
 function extractSection(markdown: string, heading: string): string {

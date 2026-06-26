@@ -183,6 +183,14 @@ const olcliFiles = {
   ].join("\n"),
 };
 
+function normalizeInjectedPath(filePath: string): string {
+  return filePath.replace(/\\/g, "/");
+}
+
+function injectedRelativePath(filePath: string): string {
+  return normalizeInjectedPath(filePath).replace(/^\/repo\//, "");
+}
+
 describe("prepublish package contents gate", () => {
   it("accepts the intended package surface", () => {
     expect(() =>
@@ -565,11 +573,12 @@ describe("prepublish command orchestration", () => {
         return { exitCode: 0, stdout: "", stderr: "" };
       },
       readTextFile: async (path) => {
-        if (path.endsWith("package-lock.json")) return JSON.stringify({ packages: {} });
-        if (path.endsWith("package.json")) return olcliFiles["package.json"];
-        if (path.endsWith(".gitignore")) return safeGitignore;
-        if (path.endsWith(".github/workflows/npm-publish.yml")) return safeNpmPublishWorkflow;
-        const relativePath = path.replace(/^\/repo\//, "");
+        const normalizedPath = normalizeInjectedPath(path);
+        if (normalizedPath.endsWith("package-lock.json")) return JSON.stringify({ packages: {} });
+        if (normalizedPath.endsWith("package.json")) return olcliFiles["package.json"];
+        if (normalizedPath.endsWith(".gitignore")) return safeGitignore;
+        if (normalizedPath.endsWith(".github/workflows/npm-publish.yml")) return safeNpmPublishWorkflow;
+        const relativePath = injectedRelativePath(path);
         return olcliFiles[relativePath as keyof typeof olcliFiles] ?? "";
       },
       listScanFiles: async () => [],
@@ -591,13 +600,14 @@ describe("prepublish command orchestration", () => {
         return { exitCode: 0, stdout: "", stderr: "" };
       },
       readTextFile: async (path) => {
-        if (path.endsWith(".gitignore")) return safeGitignore;
-        if (path.endsWith("package-lock.json")) return JSON.stringify({ packages: {} });
-        if (path.endsWith("package.json")) return olcliFiles["package.json"];
-        if (path.endsWith(".github/workflows/npm-publish.yml")) {
+        const normalizedPath = normalizeInjectedPath(path);
+        if (normalizedPath.endsWith(".gitignore")) return safeGitignore;
+        if (normalizedPath.endsWith("package-lock.json")) return JSON.stringify({ packages: {} });
+        if (normalizedPath.endsWith("package.json")) return olcliFiles["package.json"];
+        if (normalizedPath.endsWith(".github/workflows/npm-publish.yml")) {
           return "permissions:\n  id-token: write\nsteps:\n  - env:\n      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}\n";
         }
-        const relativePath = path.replace(/^\/repo\//, "");
+        const relativePath = injectedRelativePath(path);
         return olcliFiles[relativePath as keyof typeof olcliFiles] ?? "";
       },
       listScanFiles: async () => [".github/workflows/npm-publish.yml"],
@@ -644,12 +654,13 @@ describe("prepublish command orchestration", () => {
         return { exitCode: 0, stdout: "", stderr: "" };
       },
       readTextFile: async (path) => {
-        if (path.endsWith("package-lock.json")) return JSON.stringify({ packages: {} });
-        if (path.endsWith(".gitignore")) return safeGitignore;
-        if (path.endsWith(".github/workflows/npm-publish.yml")) return safeNpmPublishWorkflow;
-        if (path.endsWith("docs/security.md")) return "projectId: <overleaf-project-id>";
-        if (path.includes("/docs/")) return "safe docs placeholder";
-        const relativePath = path.replace(/^\/repo\//, "");
+        const normalizedPath = normalizeInjectedPath(path);
+        if (normalizedPath.endsWith("package-lock.json")) return JSON.stringify({ packages: {} });
+        if (normalizedPath.endsWith(".gitignore")) return safeGitignore;
+        if (normalizedPath.endsWith(".github/workflows/npm-publish.yml")) return safeNpmPublishWorkflow;
+        if (normalizedPath.endsWith("docs/security.md")) return "projectId: <overleaf-project-id>";
+        if (normalizedPath.includes("/docs/")) return "safe docs placeholder";
+        const relativePath = injectedRelativePath(path);
         if (relativePath in exampleReleaseFiles) return exampleReleaseFiles[relativePath];
         return olcliFiles[relativePath as keyof typeof olcliFiles] ?? "";
       },
@@ -706,18 +717,19 @@ describe("prepublish command orchestration", () => {
         return { exitCode: 0, stdout: "", stderr: "" };
       },
       readTextFile: async (path) => {
+        const normalizedPath = normalizeInjectedPath(path);
         readPaths.push(path);
-        if (path.endsWith(".env.example")) return `${e2eSessionKey}=${leakCookieValue}`;
-        if (path.endsWith(".env.e2e.example")) return "OLCX_E2E_ENABLE_REAL=0";
-        if (path.endsWith(".env.local") || path.endsWith(".env.e2e.local")) {
+        if (normalizedPath.endsWith(".env.example")) return `${e2eSessionKey}=${leakCookieValue}`;
+        if (normalizedPath.endsWith(".env.e2e.example")) return "OLCX_E2E_ENABLE_REAL=0";
+        if (normalizedPath.endsWith(".env.local") || normalizedPath.endsWith(".env.e2e.local")) {
           throw new Error(`local env file must not be read: ${path}`);
         }
-        if (path.endsWith("package-lock.json")) return JSON.stringify({ packages: {} });
-        if (path.endsWith(".gitignore")) return safeGitignore;
-        if (path.endsWith(".github/workflows/npm-publish.yml")) return safeNpmPublishWorkflow;
-        if (path.endsWith("docs/security.md")) return "projectId: <overleaf-project-id>";
-        if (path.includes("/docs/")) return "safe docs placeholder";
-        const relativePath = path.replace(/^\/repo\//, "");
+        if (normalizedPath.endsWith("package-lock.json")) return JSON.stringify({ packages: {} });
+        if (normalizedPath.endsWith(".gitignore")) return safeGitignore;
+        if (normalizedPath.endsWith(".github/workflows/npm-publish.yml")) return safeNpmPublishWorkflow;
+        if (normalizedPath.endsWith("docs/security.md")) return "projectId: <overleaf-project-id>";
+        if (normalizedPath.includes("/docs/")) return "safe docs placeholder";
+        const relativePath = injectedRelativePath(path);
         if (relativePath in exampleReleaseFiles) return exampleReleaseFiles[relativePath];
         return olcliFiles[relativePath as keyof typeof olcliFiles] ?? "";
       },
@@ -728,9 +740,10 @@ describe("prepublish command orchestration", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/sensitive release text found in \.env\.example/);
-    expect(readPaths).toContain("/repo/.env.example");
-    expect(readPaths).toContain("/repo/.env.e2e.example");
-    expect(readPaths).not.toContain("/repo/.env.local");
-    expect(readPaths).not.toContain("/repo/.env.e2e.local");
+    const normalizedReadPaths = readPaths.map(normalizeInjectedPath);
+    expect(normalizedReadPaths).toContain("/repo/.env.example");
+    expect(normalizedReadPaths).toContain("/repo/.env.e2e.example");
+    expect(normalizedReadPaths).not.toContain("/repo/.env.local");
+    expect(normalizedReadPaths).not.toContain("/repo/.env.e2e.local");
   });
 });
