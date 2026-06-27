@@ -3,7 +3,7 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const OLCX_VERSION = "0.1.0";
+const OLCX_VERSION = "0.1.1";
 const OLCLI_VERSION = "0.5.0";
 const OLCLI_COMMIT = "524c30b11328a847a9c0bcf4447d2b3468160f8c";
 const OLCLI_TARBALL = "https://registry.npmjs.org/@aloth/olcli/-/olcli-0.5.0.tgz";

@@ -87,6 +87,91 @@ export function createSyncPlan(input: SyncPlanInput): SyncPlan {
   };
 }
 
+export function createFastLocalSyncPlan(input: SyncPlanInput): SyncPlan {
+  const ignoreMatcher = createIgnoreMatcher(input.userIgnorePatterns);
+  const stateByPath = createStateMap(input.state.files);
+  const localByPath = createLocalMap(input.localFiles);
+  const remoteByPath = createRemoteMap(input.remoteFiles);
+  const paths = sortedUnion(stateByPath.keys(), localByPath.keys());
+  const operations: SyncOperation[] = [];
+  const conflicts: SyncConflict[] = [];
+
+  for (const path of paths) {
+    const base = stateByPath.get(path);
+    const local = localByPath.get(path);
+    const remote = remoteByPath.get(path);
+    const localPresent = isPresentLocal(local);
+
+    if (local?.ignored === true || ignoreMatcher.isIgnored(path)) {
+      operations.push({
+        type: "ignored",
+        path,
+        reason: "ignored by sync rules",
+        local,
+        remote,
+        base,
+      });
+      continue;
+    }
+
+    let operationForPath: SyncOperation;
+    if (localPresent && !local.contentHash) {
+      operationForPath = conflictOperation(path, "unsupported", "present local file is missing a content hash", local, remote, base);
+    } else if (localPresent && !base) {
+      operationForPath = operation("upload", path, "local-only file", local, remote);
+    } else if (localPresent && base && local.contentHash !== base.contentHash) {
+      if (!remote || remoteMetadataChanged(remote, base)) {
+        operationForPath = conflictOperation(
+          path,
+          remote ? "both-modified" : "local-modified-remote-deleted",
+          remote
+            ? "local changed and remote metadata changed from baseline"
+            : "local changed while remote file is missing",
+          local,
+          remote,
+          base
+        );
+      } else {
+        operationForPath = operation("upload", path, "local changed from baseline", local, remote, base);
+      }
+    } else if (localPresent && base) {
+      operationForPath = operation("unchanged", path, "local matches baseline", local, remote, base);
+    } else if (!localPresent && base) {
+      operationForPath = conflictOperation(
+        path,
+        "unsafe-delete",
+        "local deletion is not applied automatically by fast sync",
+        local,
+        remote,
+        base
+      );
+    } else {
+      operationForPath = operation("unchanged", path, "path has no local change", local, remote, base);
+    }
+
+    operations.push(operationForPath);
+    if (operationForPath.type === "conflict" && operationForPath.conflictReason) {
+      conflicts.push({
+        path,
+        reason: operationForPath.conflictReason,
+        local,
+        remote,
+        base,
+        recommendation: RECOMMENDATIONS[operationForPath.conflictReason],
+      });
+    }
+  }
+
+  return {
+    projectId: input.projectId,
+    createdAt: input.createdAt,
+    dryRun: input.dryRun,
+    operations,
+    conflicts,
+    summary: summarizeOperations(operations),
+  };
+}
+
 function createStateMap(files: Record<string, SyncStateEntry>): Map<string, SyncStateEntry> {
   return new Map(
     Object.entries(files).map(([path, entry]) => {
@@ -129,10 +214,6 @@ function planPath(input: {
   const localPresent = isPresentLocal(local);
   const remotePresent = isPresentRemote(remote);
 
-  if ((localPresent && !local?.contentHash) || (remotePresent && !remote?.contentHash)) {
-    return conflictOperation(path, "unsupported", "present file is missing a content hash", local, remote, base);
-  }
-
   if (!base) {
     if (localPresent && !remotePresent) {
       return operation("upload", path, "local-only file", local, remote);
@@ -141,16 +222,22 @@ function planPath(input: {
     if (!localPresent && remotePresent) {
       return operation("download", path, "remote-only file", local, remote);
     }
+  }
 
+  if (!localPresent && !remotePresent) {
+    return operation("unchanged", path, "both-deleted", local, remote, base);
+  }
+
+  if ((localPresent && !local?.contentHash) || (remotePresent && !remote?.contentHash)) {
+    return conflictOperation(path, "unsupported", "present file is missing a content hash", local, remote, base);
+  }
+
+  if (!base) {
     if (localPresent && remotePresent && local.contentHash === remote.contentHash) {
       return operation("unchanged", path, "local and remote hashes match", local, remote);
     }
 
     return conflictOperation(path, "both-modified", "local and remote differ without a baseline", local, remote);
-  }
-
-  if (!localPresent && !remotePresent) {
-    return operation("unchanged", path, "both-deleted", local, remote, base);
   }
 
   if (localPresent && remotePresent) {
@@ -195,6 +282,19 @@ function planPresentOnBothSides(
   }
 
   return conflictOperation(path, "both-modified", "local and remote both changed from baseline", local, remote, base);
+}
+
+function remoteMetadataChanged(remote: RemoteFileSnapshot, base: SyncStateEntry): boolean {
+  if (remote.contentHash && remote.contentHash !== base.contentHash) {
+    return true;
+  }
+  if (remote.revision && base.remoteRevision && remote.revision !== base.remoteRevision) {
+    return true;
+  }
+  if (remote.modifiedAt && base.remoteModifiedAt && remote.modifiedAt !== base.remoteModifiedAt) {
+    return true;
+  }
+  return false;
 }
 
 function planRemoteAbsent(

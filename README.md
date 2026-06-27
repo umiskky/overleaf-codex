@@ -84,7 +84,7 @@ Overleaf passwords.
 
 ## Current Status
 
-v1 is released as `0.1.0`. Release gates, stable approval, and the sanitized
+v1 is released as `0.1.1`. Release gates, stable approval, and the sanitized
 disposable real Overleaf E2E artifact are tracked in
 [docs/release-notes-v1.md](docs/release-notes-v1.md).
 
@@ -99,6 +99,9 @@ olcx endpoint set cn
 olcx endpoint test --apply
 olcx sync --dry-run
 olcx sync
+olcx pull --mode rebase
+olcx pull --mode reset
+olcx push
 olcx compile
 olcx watch
 olcx status

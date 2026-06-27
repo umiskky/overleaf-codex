@@ -1,10 +1,13 @@
 import { lstat, readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { type ProjectAuth } from "../auth/types.js";
-import { type OverleafBackend } from "../backend/types.js";
+import { type OverleafBackend, type RemoteFile } from "../backend/types.js";
 import { createIgnoreMatcher, normalizeSyncPath } from "./ignore.js";
 import { sha256Hex } from "./plan.js";
+import { DEFAULT_REMOTE_DOWNLOAD_TIMEOUT_MS, withRemoteDownloadTimeout } from "./remoteDownload.js";
 import { type LocalFileSnapshot, type RemoteFileSnapshot } from "./types.js";
+
+type MissingHashDownloadPolicy = boolean | ((file: RemoteFile) => boolean);
 
 export async function createLocalSnapshot(input: {
   projectRoot: string;
@@ -61,9 +64,13 @@ export async function createRemoteSnapshot(_input: {
   projectId: string;
   auth: ProjectAuth;
   userIgnorePatterns?: string[];
+  downloadTimeoutMs?: number;
+  downloadMissingHash?: MissingHashDownloadPolicy;
 }): Promise<RemoteFileSnapshot[]> {
   const input = _input;
   const ignoreMatcher = createIgnoreMatcher(input.userIgnorePatterns);
+  const downloadTimeoutMs = input.downloadTimeoutMs ?? DEFAULT_REMOTE_DOWNLOAD_TIMEOUT_MS;
+  const downloadMissingHash = input.downloadMissingHash ?? true;
   const files = await input.backend.listFiles({ projectId: input.projectId, auth: input.auth });
   const snapshots: RemoteFileSnapshot[] = [];
 
@@ -76,13 +83,22 @@ export async function createRemoteSnapshot(_input: {
     let contentHash = isValidSha256(file.contentHash) ? file.contentHash : undefined;
     let size = file.size;
 
-    if (!contentHash) {
-      const bytes = await input.backend.downloadFile({
-        projectId: input.projectId,
-        auth: input.auth,
-        path,
-        remoteId: file.remoteId,
-      });
+    if (!contentHash && shouldDownloadMissingHash(downloadMissingHash, { ...file, path })) {
+      const bytes = await withRemoteDownloadTimeout(
+        () =>
+          input.backend.downloadFile({
+            projectId: input.projectId,
+            auth: input.auth,
+            path,
+            remoteId: file.remoteId,
+          }),
+        {
+          path,
+          timeoutMs: downloadTimeoutMs,
+          message: "Timed out downloading a remote file while preparing the sync plan.",
+          hint: "Retry olcx sync --dry-run. If it repeats, inspect this file in Overleaf or add it to sync.ignore intentionally.",
+        }
+      );
       contentHash = sha256Hex(bytes);
       size = size ?? bytes.byteLength;
     }
@@ -104,4 +120,8 @@ export async function createRemoteSnapshot(_input: {
 
 function isValidSha256(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+}
+
+function shouldDownloadMissingHash(policy: MissingHashDownloadPolicy, file: RemoteFile): boolean {
+  return typeof policy === "function" ? policy(file) : policy;
 }

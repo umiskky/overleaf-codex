@@ -24,12 +24,15 @@ import {
   testEndpoint,
 } from "./commands/endpoint.js";
 import { initProject } from "./commands/init.js";
+import { formatPullConflictFailure, pullProject, type PullMode } from "./commands/pull.js";
+import { pushProject } from "./commands/push.js";
 import { getStatusOutput } from "./commands/status.js";
 import { formatSyncConflictFailure, syncProject } from "./commands/sync.js";
 import { formatWatchFailure, runWatchCommand } from "./commands/watch.js";
 import { type OverleafBackend, type OverleafBackendFactory } from "./backend/index.js";
 import { MAX_FAST_FALLBACK_ATTEMPTS } from "./config/types.js";
 import type { FetchLike } from "./endpoint/overleafEndpoint.js";
+import { formatTransferProgress } from "./sync/output.js";
 import type { WatchAdapter, WatchSignalRuntime } from "./watch/types.js";
 
 function readPackageVersion(): string {
@@ -153,15 +156,22 @@ function statusAction(io: CliIo, runtime: CliRuntime) {
 }
 
 function syncAction(io: CliIo, runtime: CliRuntime) {
-  return async (options: { dryRun?: boolean }) => {
+  return async (options: { dryRun?: boolean; strict?: boolean }) => {
     try {
+      const dryRun = Boolean(options.dryRun);
       const result = await syncProject({
         cwd: runtime.cwd?.() ?? process.cwd(),
-        dryRun: Boolean(options.dryRun),
+        dryRun,
+        strict: Boolean(options.strict),
         backend: runtime.backend,
         createBackend: runtime.createBackend,
         env: runtime.env ?? process.env,
         now: runtime.now,
+        onProgress: dryRun
+          ? undefined
+          : (event) => {
+              io.writeOut(formatTransferProgress(event));
+            },
       });
 
       io.writeOut(result.output);
@@ -192,6 +202,101 @@ function syncAction(io: CliIo, runtime: CliRuntime) {
           exitCode: error.exitCode,
           message: error.message,
           hint: error.hint ?? "Fix the sync issue and try again.",
+          details: error.details,
+        })
+      );
+      io.setExitCode(error.exitCode);
+    }
+  };
+}
+
+function pullAction(io: CliIo, runtime: CliRuntime) {
+  return async (options: { dryRun?: boolean; mode?: PullMode }) => {
+    try {
+      const dryRun = Boolean(options.dryRun);
+      const result = await pullProject({
+        cwd: runtime.cwd?.() ?? process.cwd(),
+        dryRun,
+        mode: options.mode ?? "rebase",
+        backend: runtime.backend,
+        createBackend: runtime.createBackend,
+        env: runtime.env ?? process.env,
+        now: runtime.now,
+        onProgress: dryRun
+          ? undefined
+          : (event) => {
+              io.writeOut(formatTransferProgress(event));
+            },
+      });
+
+      io.writeOut(result.output);
+      io.setExitCode(EXIT_CODES.SUCCESS);
+    } catch (error) {
+      if (!isOlcxError(error)) {
+        throw error;
+      }
+
+      if (error.code === "SYNC_CONFLICT") {
+        io.writeErr(
+          formatPullConflictFailure({
+            conflicts: readConflictDetails(error.details),
+            dryRun: Boolean(options.dryRun),
+            reportWritten:
+              typeof error.details === "object" &&
+              error.details !== null &&
+              "reportPath" in error.details,
+          })
+        );
+        io.setExitCode(error.exitCode);
+        return;
+      }
+
+      io.writeErr(
+        formatCliFailure({
+          code: error.code,
+          exitCode: error.exitCode,
+          message: error.message,
+          hint: error.hint ?? "Fix the pull issue and try again.",
+          details: error.details,
+        })
+      );
+      io.setExitCode(error.exitCode);
+    }
+  };
+}
+
+function pushAction(io: CliIo, runtime: CliRuntime) {
+  return async (options: { dryRun?: boolean; prune?: boolean }) => {
+    try {
+      const dryRun = Boolean(options.dryRun);
+      const result = await pushProject({
+        cwd: runtime.cwd?.() ?? process.cwd(),
+        dryRun,
+        prune: options.prune,
+        backend: runtime.backend,
+        createBackend: runtime.createBackend,
+        env: runtime.env ?? process.env,
+        now: runtime.now,
+        onProgress: dryRun
+          ? undefined
+          : (event) => {
+              io.writeOut(formatTransferProgress(event));
+            },
+      });
+
+      io.writeOut(result.output);
+      io.setExitCode(EXIT_CODES.SUCCESS);
+    } catch (error) {
+      if (!isOlcxError(error)) {
+        throw error;
+      }
+
+      io.writeErr(
+        formatCliFailure({
+          code: error.code,
+          exitCode: error.exitCode,
+          message: error.message,
+          hint: error.hint ?? "Fix the push issue and try again.",
           details: error.details,
         })
       );
@@ -319,6 +424,13 @@ function parseEndpointTimeout(value: string): number {
     throw new InvalidArgumentError("endpoint timeout must be a positive integer in milliseconds");
   }
   return parsed;
+}
+
+function parsePullMode(value: string): PullMode {
+  if (value === "reset" || value === "rebase") {
+    return value;
+  }
+  throw new InvalidArgumentError("pull mode must be reset or rebase");
 }
 
 function compileAction(io: CliIo, runtime: CliRuntime) {
@@ -471,7 +583,22 @@ export function buildCli(io: CliIo = defaultIo, runtime: CliRuntime = {}): Comma
     .command("sync")
     .description("Synchronize local files and the bound Overleaf project without silent overwrites.")
     .option("--dry-run", "Show planned sync operations without changing files")
+    .option("--strict", "Check remote file hashes and pause on bidirectional conflicts")
     .action(syncAction(io, runtime));
+
+  program
+    .command("pull")
+    .description("Pull files from Overleaf into the local repository.")
+    .option("--dry-run", "Show planned pull operations without changing files")
+    .option("--mode <mode>", "Pull mode: reset or rebase", parsePullMode, "rebase")
+    .action(pullAction(io, runtime));
+
+  program
+    .command("push")
+    .description("Push local files to Overleaf, overwriting remote files.")
+    .option("--dry-run", "Show planned push operations without changing files")
+    .option("--no-prune", "Keep remote-only files instead of deleting them")
+    .action(pushAction(io, runtime));
 
   program
     .command("compile")

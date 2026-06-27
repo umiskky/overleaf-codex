@@ -1,17 +1,17 @@
 # v1 Release Notes
 
-Release candidate status: RC cycle completed; stable v0.1.0 is approved after
+Release candidate status: RC cycle completed; stable v0.1.1 is approved after
 local gates and sanitized disposable real Overleaf E2E verification.
 
 Stable release decision: Approved for stable release
 
-Sanitized real E2E artifact: gh-release://umiskky/overleaf-codex/v0.1.0/sanitized-real-e2e.md
+Sanitized real E2E artifact: gh-release://umiskky/overleaf-codex/v0.1.1/sanitized-real-e2e.md
 
 `olcx` is not an official Overleaf project and is not an official `olcli` project. It is not affiliated with, endorsed by, or maintained by Overleaf or `olcli`.
 
 ## What v1 Includes
 
-- CLI-first paper workflow through `olcx auth`, `olcx init`, `olcx endpoint status`, `olcx endpoint test`, `olcx status`, `olcx doctor`, `olcx sync`, `olcx compile`, and `olcx watch`.
+- CLI-first paper workflow through `olcx auth`, `olcx init`, `olcx endpoint status`, `olcx endpoint test`, `olcx status`, `olcx doctor`, `olcx sync`, `olcx pull`, `olcx push`, `olcx compile`, and `olcx watch`.
 - One local paper repository binds to one Overleaf project by default.
 - Manual Overleaf endpoint management for `https://www.overleaf.com` and
   `https://cn.overleaf.com`, with read-only probing and explicit
@@ -24,7 +24,7 @@ Sanitized real E2E artifact: gh-release://umiskky/overleaf-codex/v0.1.0/sanitize
 
 ## Final Gate Checklist
 
-These gates passed before stable v0.1.0 approval:
+These gates passed before stable v0.1.1 approval:
 
 ```bash
 npm run build
@@ -45,9 +45,14 @@ environment files, `tmp/`, tests, scripts, generated PDFs, logs,
 
 ## npm Publishing Status
 
-Stable npm publishing is approved for v0.1.0. The repository contains
+Stable npm publishing is approved for v0.1.1. The repository contains
 `.github/workflows/npm-publish.yml` for GitHub Actions Trusted Publishing
 through the protected `npm-publish` environment.
+
+The earlier `0.1.0` and release-candidate npm versions were unpublished during
+release cleanup. npm does not allow republishing a version string after it has
+been used, so `0.1.1` is the first installable stable npm version for this
+cleaned release line.
 
 Release tags must match `package.json`:
 

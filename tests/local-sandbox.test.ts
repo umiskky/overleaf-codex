@@ -125,6 +125,18 @@ async function withSandboxPaperRepo<T>(fn: (projectRoot: string) => Promise<T>):
   }
 }
 
+async function withEmptySandboxDirectory<T>(fn: (projectRoot: string) => Promise<T>): Promise<T> {
+  const projectRoot = await mkdtemp(join(tmpdir(), "olcx-empty-sandbox-test-"));
+  tempRoots.add(projectRoot);
+
+  try {
+    return await fn(projectRoot);
+  } finally {
+    await rm(projectRoot, { recursive: true, force: true });
+    tempRoots.delete(projectRoot);
+  }
+}
+
 async function writeFixture(projectRoot: string, path: string, content: string): Promise<void> {
   const absolutePath = join(projectRoot, ...path.split("/"));
   await mkdir(dirname(absolutePath), { recursive: true });
@@ -244,6 +256,18 @@ describe("local sandbox CLI regression", () => {
       expect(result.stdout).toContain("Auth: missing");
       expect(result.stderr).toBe("");
       assertNoSensitiveOutput(result.stdout);
+    });
+  });
+
+  it("initializes an empty directory before git is set up", async () => {
+    await withEmptySandboxDirectory(async (projectRoot) => {
+      const init = await runCli(projectRoot, ["init", "--project", PROJECT_URL]);
+
+      expect(init.exitCode).toBe(EXIT_CODES.SUCCESS);
+      expect(init.stdout).toContain(`Project root: ${projectRoot}`);
+      await expect(readFile(join(projectRoot, ".olcx", "config.json"), "utf8")).resolves.toContain(PROJECT_ID);
+      await expect(readFile(join(projectRoot, ".gitignore"), "utf8")).resolves.toContain(".olcx/auth.local.json");
+      await expect(readFile(join(projectRoot, ".vscode", "tasks.json"), "utf8")).resolves.toContain("olcx: sync dry-run");
     });
   });
 
@@ -383,9 +407,9 @@ describe("local sandbox CLI regression", () => {
         await expect(readRemoteText(backend, "sections/intro.tex")).resolves.toBe(WATCH_TEXT);
       });
       await expect(readFile(join(projectRoot, "build", "overleaf", "main.pdf"), "utf8")).resolves.toContain("%PDF-1.4");
+      await vi.waitFor(() => expect(capture.stdout()).toContain("Compiled PDF: build/overleaf/main.pdf"));
       expect(capture.stdout()).toContain("olcx watch");
       expect(capture.stdout()).toContain("Running: olcx sync");
-      expect(capture.stdout()).toContain("Compiled PDF: build/overleaf/main.pdf");
       expect(capture.stderr()).toBe("");
       assertNoSensitiveOutput(capture.stdout());
 

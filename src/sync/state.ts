@@ -96,11 +96,12 @@ export function buildNextSyncState(input: {
   plan: SyncPlan;
   appliedAt: string;
   uploadResults?: Map<string, RemoteFileSnapshot>;
+  downloadResults?: Map<string, RemoteFileSnapshot>;
 }): SyncStateFile {
   const files: Record<string, SyncStateEntry> = {};
 
   for (const operation of input.plan.operations) {
-    const entry = stateEntryForOperation(operation, input.appliedAt, input.uploadResults);
+    const entry = stateEntryForOperation(operation, input.appliedAt, input.uploadResults, input.downloadResults);
     if (entry) {
       files[entry.path] = entry;
     }
@@ -117,7 +118,8 @@ export function buildNextSyncState(input: {
 function stateEntryForOperation(
   operation: SyncOperation,
   appliedAt: string,
-  uploadResults: Map<string, RemoteFileSnapshot> | undefined
+  uploadResults: Map<string, RemoteFileSnapshot> | undefined,
+  downloadResults: Map<string, RemoteFileSnapshot> | undefined
 ): SyncStateEntry | undefined {
   const path = normalizeSyncPath(operation.path);
 
@@ -139,17 +141,18 @@ function stateEntryForOperation(
   }
 
   if (operation.type === "download") {
-    if (!operation.remote?.contentHash) {
+    const remote = downloadResults?.get(path) ?? operation.remote;
+    if (!remote?.contentHash) {
       return undefined;
     }
     return compactEntry({
       path,
-      contentHash: operation.remote.contentHash,
-      size: operation.remote.size,
+      contentHash: remote.contentHash,
+      size: remote.size,
       localModifiedAt: appliedAt,
-      remoteModifiedAt: operation.remote.modifiedAt,
-      remoteId: operation.remote.remoteId,
-      remoteRevision: operation.remote.revision,
+      remoteModifiedAt: remote.modifiedAt,
+      remoteId: remote.remoteId,
+      remoteRevision: remote.revision,
       syncedAt: appliedAt,
     });
   }

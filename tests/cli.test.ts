@@ -1156,7 +1156,7 @@ describe("olcx cli", () => {
     }
   });
 
-  it("runs sync dry-run without mutating local files, remote files, or state", async () => {
+  it("runs fast sync dry-run without mutating local files, remote files, or state", async () => {
     const root = await mkdtemp(join(tmpdir(), "olcx-cli-sync-dry-run-test-"));
     const capture = createIo();
 
@@ -1179,7 +1179,7 @@ describe("olcx cli", () => {
       expect(capture.stderr()).toBe("");
       expect(capture.stdout()).toContain("olcx sync --dry-run");
       expect(capture.stdout()).toContain("Uploads:\n- main.tex");
-      expect(capture.stdout()).toContain("Downloads:\n- refs.bib");
+      expect(capture.stdout()).not.toContain("Downloads:");
       expect(capture.stdout()).toContain("No files changed.");
       expect(capture.stdout()).not.toContain(syncProjectId);
       expect(capture.stdout()).not.toContain(syncAuth.sessionCookie);
@@ -1188,6 +1188,120 @@ describe("olcx cli", () => {
         code: "BACKEND_PROTOCOL_ERROR",
       });
       await expect(readFile(getSyncStatePath(root), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("runs strict sync dry-run with remote download planning", async () => {
+    const root = await mkdtemp(join(tmpdir(), "olcx-cli-sync-strict-dry-run-test-"));
+    const capture = createIo();
+
+    try {
+      await writeCliProject(root);
+      await writeFixture(root, "main.tex", "local main\n");
+      const backend = createFakeOverleafBackend({
+        projects: [{ projectId: syncProjectId, files: [{ path: "refs.bib", text: "@article{fake,title={Fake}}\n" }] }],
+      });
+
+      const exitCode = await run(["node", "olcx", "sync", "--strict", "--dry-run"], capture.io, {
+        cwd: () => root,
+        env: {},
+        backend,
+        now: () => new Date("2026-06-25T09:00:00.000Z"),
+      });
+
+      expect(exitCode).toBe(EXIT_CODES.SUCCESS);
+      expect(capture.exitCode()).toBe(EXIT_CODES.SUCCESS);
+      expect(capture.stderr()).toBe("");
+      expect(capture.stdout()).toContain("olcx sync --strict --dry-run");
+      expect(capture.stdout()).toContain("Uploads:\n- main.tex");
+      expect(capture.stdout()).toContain("Downloads:\n- refs.bib");
+      expect(capture.stdout()).toContain("No files changed.");
+      expect(capture.stdout()).not.toContain(syncProjectId);
+      expect(capture.stdout()).not.toContain(syncAuth.sessionCookie);
+      await expect(readFile(join(root, "refs.bib"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(getSyncStatePath(root), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("prints progress and a summary table while applying sync", async () => {
+    const root = await mkdtemp(join(tmpdir(), "olcx-cli-sync-progress-test-"));
+    const capture = createIo();
+
+    try {
+      await writeCliProject(root);
+      await writeFixture(root, "main.tex", "local main\n");
+      const backend = createFakeOverleafBackend({ projects: [{ projectId: syncProjectId }] });
+
+      const exitCode = await run(["node", "olcx", "sync"], capture.io, {
+        cwd: () => root,
+        env: {},
+        backend,
+        now: () => new Date("2026-06-25T09:00:00.000Z"),
+      });
+
+      expect(exitCode).toBe(EXIT_CODES.SUCCESS);
+      expect(capture.stderr()).toBe("");
+      expect(capture.stdout()).toContain("Progress [##########] 1/1 upload main.tex ETA 0.0s");
+      expect(capture.stdout()).toContain("olcx sync summary");
+      expect(capture.stdout()).toContain("| ok     | upload | main.tex");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("runs pull reset from the CLI", async () => {
+    const root = await mkdtemp(join(tmpdir(), "olcx-cli-pull-reset-test-"));
+    const capture = createIo();
+
+    try {
+      await writeCliProject(root);
+      await writeFixture(root, "main.tex", "local main\n");
+      const backend = createFakeOverleafBackend({
+        projects: [{ projectId: syncProjectId, files: [{ path: "main.tex", text: "remote main\n" }] }],
+      });
+
+      const exitCode = await run(["node", "olcx", "pull", "--mode", "reset"], capture.io, {
+        cwd: () => root,
+        env: {},
+        backend,
+        now: () => new Date("2026-06-25T09:00:00.000Z"),
+      });
+
+      expect(exitCode).toBe(EXIT_CODES.SUCCESS);
+      expect(capture.stderr()).toBe("");
+      expect(capture.stdout()).toContain("olcx pull --mode reset");
+      expect(capture.stdout()).toContain("olcx pull summary");
+      await expect(readFile(join(root, "main.tex"), "utf8")).resolves.toBe("remote main\n");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("runs push from the CLI", async () => {
+    const root = await mkdtemp(join(tmpdir(), "olcx-cli-push-test-"));
+    const capture = createIo();
+
+    try {
+      await writeCliProject(root);
+      await writeFixture(root, "main.tex", "local main\n");
+      const backend = createFakeOverleafBackend({ projects: [{ projectId: syncProjectId }] });
+
+      const exitCode = await run(["node", "olcx", "push"], capture.io, {
+        cwd: () => root,
+        env: {},
+        backend,
+        now: () => new Date("2026-06-25T09:00:00.000Z"),
+      });
+
+      expect(exitCode).toBe(EXIT_CODES.SUCCESS);
+      expect(capture.stderr()).toBe("");
+      expect(capture.stdout()).toContain("olcx push");
+      expect(capture.stdout()).toContain("olcx push summary");
+      await expect(readRemoteText(backend, "main.tex")).resolves.toBe("local main\n");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -1205,7 +1319,7 @@ describe("olcx cli", () => {
         projects: [{ projectId: syncProjectId, files: [{ path: "main.tex", text: "remote change\n" }] }],
       });
 
-      const exitCode = await run(["node", "olcx", "sync"], capture.io, {
+      const exitCode = await run(["node", "olcx", "sync", "--strict"], capture.io, {
         cwd: () => root,
         env: {},
         backend,

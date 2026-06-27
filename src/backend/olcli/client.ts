@@ -23,7 +23,7 @@ import * as cheerio from 'cheerio';
 import * as https from 'node:https';
 import * as http from 'node:http';
 
-export const USER_AGENT = "olcx/0.1.0 olcli/0.5.0";
+export const USER_AGENT = "olcx/0.1.1 olcli/0.5.0";
 
 const DEFAULT_BASE_URL = 'https://www.overleaf.com';
 

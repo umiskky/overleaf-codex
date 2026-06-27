@@ -109,6 +109,15 @@ olcx sync --dry-run
 olcx sync
 ```
 
+`olcx sync` is optimized for local-incremental work: it uploads local changes
+without downloading every remote file for hashing. For a strict bidirectional
+check, run `olcx sync --strict --dry-run` before `olcx sync --strict`.
+
+Use `olcx pull --mode rebase` to bring Overleaf changes down while keeping local
+edits, or `olcx pull --mode reset` to replace local files with the Overleaf
+project. Use `olcx push` when local files should overwrite Overleaf; add
+`--no-prune` to keep remote-only files.
+
 If `olcx` reports `SYNC_CONFLICT`, review `.olcx/state/conflicts.json` and
 resolve the listed files intentionally before rerunning `olcx sync --dry-run`.
 Sync must not silently overwrite local or remote changes.

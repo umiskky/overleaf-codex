@@ -10,7 +10,21 @@
   "sync": {
     "mode": "bidirectional",
     "conflictPolicy": "pause",
-    "ignore": []
+    "ignore": [],
+    "remoteCheck": "local-baseline",
+    "downloadConcurrency": 5,
+    "uploadConcurrency": 3,
+    "retry": {
+      "maxAttempts": 5,
+      "delayMs": 6000
+    },
+    "timeout": {
+      "baseMs": 30000,
+      "unknownSizeMs": 600000,
+      "minBytesPerSecond": 25000,
+      "bufferRatio": 2.5,
+      "maxMs": 1800000
+    }
   },
   "compile": {
     "timeoutMs": 120000,

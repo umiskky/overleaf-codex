@@ -1,7 +1,10 @@
 # Sync
 
-`olcx sync` synchronizes the local paper repository with the bound Overleaf
-project. It must not silently overwrite local or remote changes.
+`olcx sync` performs the default local-incremental sync for the bound Overleaf
+project. It uploads local files that changed from the last `.olcx/state`
+baseline and uses remote metadata to stop before overwriting a path that also
+changed on Overleaf. It does not download every remote file just to compute
+hashes. Sync must not silently overwrite local or remote changes.
 
 ## Dry Run First
 
@@ -9,9 +12,8 @@ project. It must not silently overwrite local or remote changes.
 olcx sync --dry-run
 ```
 
-The dry run prints planned uploads, downloads, and deletes without changing
-files. Use it before any manual sync in a repository that may have local or
-remote edits.
+The dry run prints planned uploads without changing files. Use it before any
+manual sync in a repository that may have local edits.
 
 ## Apply A Clean Plan
 
@@ -20,7 +22,41 @@ olcx sync
 ```
 
 `olcx sync` applies the plan only when it can do so safely. The sync state is
-stored under `.olcx/state/` and generated reports are local-only.
+stored under `.olcx/state/` and generated reports are local-only. Applied
+transfers show file-level progress, retry transient failures using the configured
+retry budget, and end with a table of path, size, duration, and attempts.
+
+For the older strict bidirectional check, use:
+
+```bash
+olcx sync --strict --dry-run
+olcx sync --strict
+```
+
+Strict mode may download remote files that lack usable hash metadata.
+
+## Pull And Push
+
+Use `pull` when the Overleaf project should drive local files:
+
+```bash
+olcx pull --mode rebase
+olcx pull --mode reset
+```
+
+`rebase` pulls remote changes while keeping local edits; same-path local and
+remote edits stop with `SYNC_CONFLICT`. `reset` replaces local files with the
+remote project and removes local-only files.
+
+Use `push` when the local repository should overwrite Overleaf:
+
+```bash
+olcx push
+olcx push --no-prune
+```
+
+`push` uploads all local non-ignored files and prunes remote-only files by
+default. `--no-prune` keeps remote-only files.
 
 ## Conflict Handling
 

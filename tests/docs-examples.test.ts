@@ -33,7 +33,22 @@ describe("minimal paper example", () => {
       overleaf: { baseUrl: "https://www.overleaf.com" },
       rootDocument: "main.tex",
       pdfPath: "build/overleaf/main.pdf",
-      sync: { mode: "bidirectional", conflictPolicy: "pause", ignore: [] },
+      sync: {
+        mode: "bidirectional",
+        conflictPolicy: "pause",
+        ignore: [],
+        remoteCheck: "local-baseline",
+        downloadConcurrency: 5,
+        uploadConcurrency: 3,
+        retry: { maxAttempts: 5, delayMs: 6000 },
+        timeout: {
+          baseMs: 30000,
+          unknownSizeMs: 600000,
+          minBytesPerSecond: 25000,
+          bufferRatio: 2.5,
+          maxMs: 1800000,
+        },
+      },
       compile: {
         timeoutMs: 120000,
         fastFallback: { enabled: true, attempts: 1, timeoutMs: 30000 },

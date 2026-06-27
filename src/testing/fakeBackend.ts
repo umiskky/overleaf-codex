@@ -115,14 +115,15 @@ class FakeOverleafBackend implements OverleafBackend {
     this.assertAuth(input.auth);
     const project = this.getProject(input.projectId);
     const path = normalizePath(input.path);
-    const remoteId = project.files.get(path)?.remoteId ?? `fake-remote-${project.nextRemoteId++}`;
+    const existing = project.files.get(path);
+    const remoteId = existing?.remoteId ?? `fake-remote-${project.nextRemoteId++}`;
     const file: FakeStoredFile = {
       path,
       bytes: new Uint8Array(input.bytes),
       binary: isBinaryPath(path),
       remoteId,
       modifiedAt: this.now,
-      revision: `rev-${remoteId}`,
+      revision: existing ? `rev-${remoteId}-${project.nextRemoteId++}` : `rev-${remoteId}`,
     };
     project.files.set(path, file);
     return toRemoteFile(file);

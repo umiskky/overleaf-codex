@@ -1,6 +1,9 @@
 export const BUILT_IN_IGNORE_PATTERNS = [
   ".git/",
+  ".gitignore",
   "node_modules/",
+  ".vscode/",
+  ".olcx/config.json",
   ".olcx/auth.local.json",
   ".olcx/*.local.json",
   ".olcx/*.secret.json",

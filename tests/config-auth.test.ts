@@ -40,7 +40,22 @@ describe("project config and auth infrastructure", () => {
       overleaf: { baseUrl: "https://www.overleaf.com" },
       rootDocument: "main.tex",
       pdfPath: "build/overleaf/main.pdf",
-      sync: { mode: "bidirectional", conflictPolicy: "pause", ignore: [] },
+      sync: {
+        mode: "bidirectional",
+        conflictPolicy: "pause",
+        ignore: [],
+        remoteCheck: "local-baseline",
+        downloadConcurrency: 5,
+        uploadConcurrency: 3,
+        retry: { maxAttempts: 5, delayMs: 6000 },
+        timeout: {
+          baseMs: 30000,
+          unknownSizeMs: 600000,
+          minBytesPerSecond: 25000,
+          bufferRatio: 2.5,
+          maxMs: 1800000,
+        },
+      },
       compile: {
         timeoutMs: 120000,
         fastFallback: { enabled: true, attempts: 1, timeoutMs: 30000 },
@@ -74,6 +89,106 @@ describe("project config and auth infrastructure", () => {
         compile: { timeoutMs: 120000, fastFallback: { enabled: true, attempts: 1, timeoutMs: 30000 } },
       })
     ).toMatchObject({ overleaf: { baseUrl: "https://www.overleaf.com" } });
+  });
+
+  it("defaults and validates sync transfer behavior", () => {
+    const defaults = createDefaultProjectConfig({ projectId: "<overleaf-project-id>" }).sync;
+
+    expect(defaults).toMatchObject({
+      remoteCheck: "local-baseline",
+      uploadConcurrency: 3,
+      retry: { maxAttempts: 5, delayMs: 6000 },
+      timeout: {
+        baseMs: 30000,
+        unknownSizeMs: 600000,
+        minBytesPerSecond: 25000,
+        bufferRatio: 2.5,
+        maxMs: 1800000,
+      },
+    });
+
+    expect(
+      validateProjectConfig({
+        schemaVersion: 1,
+        projectId: "<overleaf-project-id>",
+        rootDocument: "main.tex",
+        pdfPath: "build/overleaf/main.pdf",
+        sync: {
+          mode: "bidirectional",
+          conflictPolicy: "pause",
+          ignore: [],
+          remoteCheck: "strict",
+          downloadConcurrency: 4,
+          uploadConcurrency: 2,
+          retry: { maxAttempts: 7, delayMs: 1000 },
+          timeout: {
+            baseMs: 1000,
+            unknownSizeMs: 120000,
+            minBytesPerSecond: 50000,
+            bufferRatio: 3,
+            maxMs: 600000,
+          },
+        },
+        compile: { timeoutMs: 120000, fastFallback: { enabled: true, attempts: 1, timeoutMs: 30000 } },
+      })
+    ).toMatchObject({
+      sync: {
+        remoteCheck: "strict",
+        downloadConcurrency: 4,
+        uploadConcurrency: 2,
+        retry: { maxAttempts: 7, delayMs: 1000 },
+      },
+    });
+
+    for (const sync of [
+      { remoteCheck: "remote-wins" },
+      { uploadConcurrency: 0 },
+      { uploadConcurrency: 6 },
+      { retry: { maxAttempts: 0, delayMs: 6000 } },
+      { retry: { maxAttempts: 5, delayMs: -1 } },
+      { timeout: { baseMs: 0 } },
+      { timeout: { minBytesPerSecond: 0 } },
+      { timeout: { bufferRatio: 0 } },
+    ]) {
+      expect(() =>
+        validateProjectConfig({
+          schemaVersion: 1,
+          projectId: "<overleaf-project-id>",
+          rootDocument: "main.tex",
+          pdfPath: "build/overleaf/main.pdf",
+          sync: { mode: "bidirectional", conflictPolicy: "pause", ignore: [], ...sync },
+          compile: { timeoutMs: 120000, fastFallback: { enabled: true, attempts: 1, timeoutMs: 30000 } },
+        })
+      ).toThrow(/sync\./i);
+    }
+  });
+
+  it("defaults and validates bounded sync download concurrency", () => {
+    expect(createDefaultProjectConfig({ projectId: "<overleaf-project-id>" }).sync.downloadConcurrency).toBe(5);
+
+    expect(
+      validateProjectConfig({
+        schemaVersion: 1,
+        projectId: "<overleaf-project-id>",
+        rootDocument: "main.tex",
+        pdfPath: "build/overleaf/main.pdf",
+        sync: { mode: "bidirectional", conflictPolicy: "pause", ignore: [], downloadConcurrency: 3 },
+        compile: { timeoutMs: 120000, fastFallback: { enabled: true, attempts: 1, timeoutMs: 30000 } },
+      })
+    ).toMatchObject({ sync: { downloadConcurrency: 3 } });
+
+    for (const downloadConcurrency of [0, 6, 1.5]) {
+      expect(() =>
+        validateProjectConfig({
+          schemaVersion: 1,
+          projectId: "<overleaf-project-id>",
+          rootDocument: "main.tex",
+          pdfPath: "build/overleaf/main.pdf",
+          sync: { mode: "bidirectional", conflictPolicy: "pause", ignore: [], downloadConcurrency },
+          compile: { timeoutMs: 120000, fastFallback: { enabled: true, attempts: 1, timeoutMs: 30000 } },
+        })
+      ).toThrow(/sync\.downloadConcurrency/i);
+    }
   });
 
   it("rejects unsupported Overleaf base URLs and secret-like overleaf keys", () => {
@@ -165,16 +280,35 @@ describe("project config and auth infrastructure", () => {
     ).toThrow(/sessionCookie/i);
   });
 
-  it("discovers project root from nested directories", async () => {
+  it("uses the command working directory as the project root instead of climbing to a parent marker", async () => {
     const projectRoot = await makeTempProject();
     await mkdir(join(projectRoot, ".git"), { recursive: true });
     const nested = join(projectRoot, "sections", "draft");
     await mkdir(nested, { recursive: true });
 
-    await expect(findProjectRoot(nested)).resolves.toBe(projectRoot);
+    await expect(findProjectRoot(nested)).resolves.toBe(nested);
   });
 
-  it("prefers an existing olcx config marker over a higher package marker", async () => {
+  it("does not treat a parent home-directory git repository as a paper project root", async () => {
+    const home = await makeTempProject();
+    const previousHome = process.env.HOME;
+    process.env.HOME = home;
+    try {
+      await mkdir(join(home, ".git"), { recursive: true });
+      const paper = join(home, "workspace", "paper");
+      await mkdir(paper, { recursive: true });
+
+      await expect(findProjectRoot(paper)).resolves.toBe(paper);
+    } finally {
+      if (previousHome === undefined) {
+        delete process.env.HOME;
+      } else {
+        process.env.HOME = previousHome;
+      }
+    }
+  });
+
+  it("does not climb to a parent olcx config marker", async () => {
     const outer = await makeTempProject();
     await writeFile(join(outer, "package.json"), "{}", "utf8");
     const paper = join(outer, "paper");
@@ -187,7 +321,7 @@ describe("project config and auth infrastructure", () => {
     const nested = join(paper, "chapters");
     await mkdir(nested, { recursive: true });
 
-    await expect(findProjectRoot(nested)).resolves.toBe(paper);
+    await expect(findProjectRoot(nested)).resolves.toBe(nested);
   });
 
   it("preserves gitignore content and appends required local-only patterns", async () => {

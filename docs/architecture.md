@@ -151,6 +151,20 @@ export interface ProjectConfig {
     mode: "bidirectional";
     conflictPolicy: "pause";
     ignore?: string[];
+    remoteCheck: "local-baseline" | "strict";
+    downloadConcurrency: number;
+    uploadConcurrency: number;
+    retry: {
+      maxAttempts: number;
+      delayMs: number;
+    };
+    timeout: {
+      baseMs: number;
+      unknownSizeMs: number;
+      minBytesPerSecond: number;
+      bufferRatio: number;
+      maxMs: number;
+    };
   };
   compile: {
     timeoutMs: number;

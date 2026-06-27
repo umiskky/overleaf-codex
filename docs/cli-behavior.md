@@ -1,8 +1,8 @@
 # CLI Behavior
 
 This document is the v1 command-line behavior contract for `olcx`. It defines
-the user-facing behavior for auth, init, endpoint, sync, compile, watch,
-status, and doctor workflows.
+the user-facing behavior for auth, init, endpoint, sync, pull, push, compile,
+watch, status, and doctor workflows.
 
 `olcx` is a lightweight CLI. It must not require local LaTeX for the core
 workflow, must not silently overwrite local or remote changes, and must not
@@ -18,7 +18,9 @@ identifiers.
 | `olcx endpoint status` | Bound project config. | None. | None. | None. | Reads `overleaf.baseUrl`, performs no network access, and returns `CONFIG_ERROR` if config is missing or invalid. |
 | `olcx endpoint test` | Bound project config. | `--timeout <ms>`, `--apply`. | None. | None. | Probes only `https://www.overleaf.com/project` and `https://cn.overleaf.com/project`. Without `--apply`, never writes config. With `--apply`, writes only the fastest available endpoint. If both fail, returns `NETWORK_ERROR` and leaves config unchanged. Invalid timeout returns `USER_INPUT_ERROR`. |
 | `olcx endpoint set cn` | Bound project config and endpoint alias `www` or `cn`. | None. | None. | None. | Writes `overleaf.baseUrl` without probing. Invalid aliases return `USER_INPUT_ERROR` and leave config unchanged. |
-| `olcx sync` | Bound project config and auth. | `--dry-run`. | `OLCX_NON_INTERACTIVE=1` and `CI=true` force non-interactive mode. | None in v1. | Missing config returns `CONFIG_ERROR`; missing auth returns `AUTH_ERROR`; conflicts return `SYNC_CONFLICT`; `--dry-run` must not mutate local or remote files. |
+| `olcx sync` | Bound project config and auth. | `--dry-run`, `--strict`. | `OLCX_NON_INTERACTIVE=1` and `CI=true` force non-interactive mode. | None in v1. | Default sync uploads local changes using remote metadata safety checks without downloading every remote file for hashing. `--strict` runs the bidirectional hash check. Missing config returns `CONFIG_ERROR`; missing auth returns `AUTH_ERROR`; conflicts return `SYNC_CONFLICT`; `--dry-run` must not mutate local or remote files. |
+| `olcx pull` | Bound project config and auth. | `--dry-run`, `--mode rebase`, `--mode reset`. | `OLCX_NON_INTERACTIVE=1` and `CI=true` force non-interactive mode. | None in v1. | `rebase` pulls remote changes while keeping local edits and stops on same-path conflicts. `reset` replaces local files with the remote project. Missing config returns `CONFIG_ERROR`; missing auth returns `AUTH_ERROR`; conflicts return `SYNC_CONFLICT`; `--dry-run` must not mutate local or remote files. |
+| `olcx push` | Bound project config and auth. | `--dry-run`, `--no-prune`. | `OLCX_NON_INTERACTIVE=1` and `CI=true` force non-interactive mode. | None in v1. | Uploads all local non-ignored files and prunes remote-only files by default. `--no-prune` keeps remote-only files. Missing config returns `CONFIG_ERROR`; missing auth returns `AUTH_ERROR`; `--dry-run` must not mutate local or remote files. |
 | `olcx compile` | Bound project config and auth. | `--pdf <path>`, `--disable-fast-fallback`, `--fast-fallback-attempts <count>`, and `--fast-fallback-timeout <ms>`. | `OLCX_NON_INTERACTIVE=1` and `CI=true` force non-interactive mode. | None in v1. | Missing config returns `CONFIG_ERROR`; missing auth returns `AUTH_ERROR`; network failures return `NETWORK_ERROR`; compile failures or timeouts return `COMPILE_FAILED`. |
 | `olcx watch` | Bound project config and auth. | `--debounce <ms>` defaults to `2500`. | `OLCX_NON_INTERACTIVE=1` and `CI=true` force non-interactive mode. | None in v1. | Must not prompt while watching. On sync conflict or compile failure, pause the automatic loop and print the next manual command to run. |
 | `olcx status` | None. | None. | `OLCX_NON_INTERACTIVE=1` and `CI=true` force non-interactive mode. | None. | Must return a redacted local summary. Missing config or auth is reported as status, not as leaked detail. |

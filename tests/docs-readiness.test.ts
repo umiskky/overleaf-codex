@@ -240,7 +240,7 @@ describe("v1 user documentation readiness", () => {
         "next",
         "Stable npm publishing is approved",
         "Sanitized real E2E artifact:",
-        "gh-release://umiskky/overleaf-codex/v0.1.0/sanitized-real-e2e.md",
+        "gh-release://umiskky/overleaf-codex/v0.1.1/sanitized-real-e2e.md",
         "forced skip smoke is allowed but is not a stable substitute",
         "build/overleaf/main.pdf",
         "SYNC_CONFLICT",
@@ -258,7 +258,18 @@ describe("v1 user documentation readiness", () => {
     const allDocs = userDocFiles.map((file) => readRequired(file)).join("\n");
     const commandNames = buildCli().commands.map((command) => command.name()).sort();
 
-    expect(commandNames).toEqual(["auth", "compile", "doctor", "endpoint", "init", "status", "sync", "watch"]);
+    expect(commandNames).toEqual([
+      "auth",
+      "compile",
+      "doctor",
+      "endpoint",
+      "init",
+      "pull",
+      "push",
+      "status",
+      "sync",
+      "watch",
+    ]);
     expect(allDocs).not.toContain("--vscode");
     for (const commandName of commandNames) {
       expect(allDocs).toContain(`olcx ${commandName}`);
@@ -269,7 +280,7 @@ describe("v1 user documentation readiness", () => {
     const notes = readRequired("docs/release-notes-v1.md");
     const approvedDecision =
       notes.includes("Stable release decision: Approved for stable release") &&
-      notes.includes("Sanitized real E2E artifact: gh-release://umiskky/overleaf-codex/v0.1.0/sanitized-real-e2e.md") &&
+      notes.includes("Sanitized real E2E artifact: gh-release://umiskky/overleaf-codex/v0.1.1/sanitized-real-e2e.md") &&
       notes.includes(
         "No raw cookie, session value, account label, private project id, or private paper content is recorded."
       );
